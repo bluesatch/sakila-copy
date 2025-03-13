@@ -85,3 +85,52 @@ SELECT DISTINCT customer_id, rental_date
 FROM rental 
 WHERE date(rental_date) = '2005-07-05';
 
+-- EQUALITY CONDITIONS
+-- GET ALL EMAILS FROM EACH CUSTOMER WHO RENTED ON JUNE 14, 2005 
+SELECT c.email 
+FROM customer c 
+JOIN rental r USING (customer_id)
+WHERE date(r.rental_date) = '2005-06-14';
+
+-- GET ALL EMAILS, FIRST AND LAST NAME OF EACH CUSTOMER WHO RENTED ON JULY 3, 2005;
+SELECT DISTINCT c.email, c.first_name, c.last_name 
+FROM customer c 
+JOIN rental r USING (customer_id)
+WHERE date(r.rental_date) = '2005-06-15';
+
+-- <> => NOT EQUAL 
+--GET ALL EMAILS FROM EACH CUSTOMER THAT DID NOT RENT ON JUNE 14, 2005  
+SELECT c.email 
+FROM customer c 
+JOIN rental r USING (customer_id)
+WHERE date(r.rental_date) <> '2005-06-14';
+
+-- RANGE CONDITIONS
+-- CHECK TO SEE IF DATA FALLS WITHIN A RANGE
+-- GET EVERY CUSTOMER ID WHO RENTED BEFORE MAY 25, 2005
+SELECT customer_id, rental_date 
+FROM rental 
+WHERE rental_date < '2005-05-25';
+
+-- GET EVERY CUSTOMER ID FOR THOSE WHO RENTED BETWEEN JUNE 14, 2005 AND JUNE 16, 2005
+SELECT customer_id, rental_date 
+FROM rental 
+WHERE (rental_date <= '2005-06-16') AND (rental_date >= '2005-06-14');
+
+-- USING THE BETWEEN OPERATOR
+SELECT customer_id, rental_date 
+FROM rental 
+WHERE rental_date BETWEEN '2005-06-14' AND '2005-06-16';
+--WHEN USING THE BETWEEN OPERATOR, YOU MUST ALWAYS SPECIFY THE LOWER LIMIT FIRST
+
+-- GET CUSTOMER ID, PAYMENT DATE AND AMOUNT WHERE PAYMENT IS BETWEEN 10.0 AND 11.99
+SELECT c.first_name, c.last_name, p.payment_date, p.amount
+FROM payment p 
+JOIN customer c USING (customer_id) 
+WHERE p.amount BETWEEN 10.0 AND 11.99
+ORDER BY p.amount DESC;
+
+--GET EVERY LAST AND FIRST NAME OF CUSTOMERS WHOSE LAST NAME FALLS BETWEEN FA AND FR
+SELECT last_name, first_name 
+FROM customer 
+WHERE last_name BETWEEN 'FA' AND 'HU';
