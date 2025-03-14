@@ -85,6 +85,9 @@ SELECT DISTINCT customer_id, rental_date
 FROM rental 
 WHERE date(rental_date) = '2005-07-05';
 
+
+-- -----------------------Filtering ----------------------------------------------
+
 -- EQUALITY CONDITIONS
 -- GET ALL EMAILS FROM EACH CUSTOMER WHO RENTED ON JUNE 14, 2005 
 SELECT c.email 
@@ -134,3 +137,53 @@ ORDER BY p.amount DESC;
 SELECT last_name, first_name 
 FROM customer 
 WHERE last_name BETWEEN 'FA' AND 'HU';
+
+-- GET EVERY TITLE AND RATING THAT HAS A RATING OF G OR PG
+SELECT title, rating
+FROM film 
+WHERE (rating = 'G') OR (rating = 'PG');
+
+-- REWRITING
+SELECT title, rating
+FROM film 
+WHERE rating IN ('G', 'PG');
+
+-- WITH IN OPERATOR, YOU CAN WRITE A SINGLE CONDITION NO MATTER HOW MANY EXPRESSIONS ARE IN THE SET
+
+-- NOT IN
+SELECT title, rating 
+FROM film 
+WHERE rating NOT IN ('PG-13', 'R', 'NC-17');
+
+-- WILDCARDS
+-- FOR SEARCHING PARTIAL STRING MATCHES
+
+-- % (ANY NUMBER OF CHARACTERS) OR _ (A SINGLE CHARACTER)
+
+SELECT last_name, first_name FROM customer
+WHERE last_name LIKE '_A_T%S';
+
+-- GET ALL FILMS THAT HAVE AN 'ER' IN THE TITLE
+SELECT title FROM film 
+WHERE title LIKE '%ER%';
+
+-- GET EVERY ACTOR WHOSE LAST NAME INCLUDES A AS THE SECOND LETTER
+SELECT last_name, first_name FROM actor
+WHERE last_name LIKE '_A%';
+
+
+-- CHALLENGE #1
+-- CONSTRUCT A QUERY THAT RETRIEVES ALL ROWS FROM THE PAYMENTS TABLE WHERE THE AMOUNT IS EITHER 1.98, 7.98, OR 9.98
+
+SELECT customer_id, amount FROM payment
+WHERE amount IN (1.98, 7.98, 9.98) ORDER BY amount;
+
+-- CHALLENGE #2
+-- CONSTRUCT A QUERY THAT FINDS ALL CUSTOMERS WHOSE LAST NAME CONTAINS AN A IN THE SECOND POSITION AND A W ANYWHERE AFTER THE A
+
+SELECT customer_id, last_name, first_name FROM customer
+WHERE last_name LIKE '_A%W%';
+
+
+-- ---------------- MULTIPLE TABLES ------------------------------------- --
+
