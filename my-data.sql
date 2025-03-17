@@ -187,3 +187,35 @@ WHERE last_name LIKE '_A%W%';
 
 -- ---------------- MULTIPLE TABLES ------------------------------------- --
 
+-- JOIN => HOW WE CAN CONNECT MULTIPLE TABLES
+
+-- GET ALL CUSTOMER'S FIRST AND LAST NAMES AND STREET ADDRESS
+-- LET'S MAKE A MISTAKE
+SELECT c.first_name, c.last_name, a.address
+FROM customer c JOIN address a;
+
+-- INNER JOIN
+SELECT c.first_name, c.last_name, a.address 
+FROM customer c 
+INNER JOIN address a 
+ON c.address_id = a.address_id;
+
+SELECT c.first_name as first, c.last_name as last, a.address as address
+FROM customer c 
+JOIN address a USING (address_id);
+
+SELECT c.first_name, c.last_name, a.address 
+FROM address a 
+JOIN customer c USING (address_id);
+
+
+-- GET CUSTOMERS WHOSE POSTAL CODE IS 52137 
+SELECT c.first_name, c.last_name, a.address
+FROM customer c, address a
+WHERE c.address_id = a.address_id
+AND a.postal_code = 52137;
+
+SELECT c.first_name, c.last_name, a.address
+FROM customer c 
+JOIN address a USING (address_id)
+WHERE a.postal_code = 52137;
