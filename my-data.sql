@@ -526,3 +526,114 @@ FROM payment
 GROUP BY customer_id
 HAVING count(*) >= 40
 ORDER BY payments DESC;
+
+------------------------ SUBQUERIES ----------------------------
+
+-- SUBQUERY => IS A QUERY CONTAINED WITHIN ANOTHER SQL STATEMENT
+
+SELECT customer_id, first_name, last_name
+FROM customer 
+WHERE customer_id = (SELECT MAX(customer_id) FROM customer);
+
+SELECT MAX(customer_id) FROM customer;
+
+-- SUBQUERY TYPES
+-- NONCORRELATED SUBQUERIES, CORRELATED SUBQUERIES
+
+-- RETURN ALL CITIES THAT ARE NOT IN INDIA
+SELECT country_id FROM country WHERE country = 'INDIA';
+
+SELECT city_id, city
+FROM city
+WHERE country_id <>
+    (SELECT country_id FROM country WHERE country = 'INDIA');
+
+-- RETURN ALL CITIES THAT ARE NOT IN UNITED STATES OR FRANCE
+SELECT city_id, city
+FROM city
+WHERE country_id NOT IN
+    (SELECT country_id FROM country WHERE country IN ('UNITED STATES', 'FRANCE'));
+
+-- MULTIPLE-ROW, SINGLE-COLUMN SUBQUERIES
+SELECT country_id
+FROM country
+WHERE country IN ('CANADA', 'MEXICO');
+
+SELECT city_id, city
+FROM city
+WHERE country_id IN 
+    (SELECT country_id FROM country WHERE country IN ('CANADA', 'MEXICO'));
+
+SELECT c.city_id, c.city
+FROM city c 
+JOIN country co USING (country_id)
+WHERE co.country IN ('CANADA', 'MEXICO');
+
+SELECT city_id, city
+FROM city
+WHERE country_id NOT IN 
+    (SELECT country_id FROM country WHERE country IN ('CANADA', 'MEXICO'));
+
+-- ALL OPERATOR
+
+-- FIND ALL CUSTOMERS WHO HAVE NEVER RECEIVED A FREE FILM RENTAL
+-- amount = 0
+SELECT first_name, last_name
+FROM customer
+WHERE customer_id <> ALL
+    (SELECT customer_id FROM payment WHERE amount = 0);
+
+SELECT customer_id FROM payment WHERE amount = 0;
+
+-- RETURN THE TOTALL NUMBER OF FILM RENTALS FOR ALL CUSTOMERS IN NORTH AMERICA, AND THE CONTAINING QUERY RETURNS ALL CUSTOMERS WHOSE TOTAL NUMBER OF FILM RENTALS EXCEEDS ANY OF THE NORTH AMERICAN CUSTOMERS
+SELECT customer_id, count(*)
+FROM rental 
+GROUP BY customer_id
+HAVING count(*) > ALL 
+    (SELECT count(*) 
+        FROM rental r 
+            JOIN customer c ON r.customer_id = c.customer_id
+            JOIN address a ON c.address_id = a.address_id
+            JOIN city ct ON a.city_id = ct.city_id
+            JOIN country co ON ct.country_id = co.country_id
+        WHERE co.country IN ('UNITED STATES', 'MEXICO', 'CANADA')
+        GROUP BY r.customer_id);
+
+-- ANY OPERATOR
+-- LIKE THE ALL OPERATOR, THE ANY OPERATOR ALLOWS A VALUE TO BE COMPARED TO THE MEMBERS OF A SET OF VALUES; UNLIKE ALL, HOWEVER, A CONDITION USING THE ANY OPERATOR EVALUATES TO TRUE AS SOON AS A SINGLE COMPARISON IS FAVORABLE. 
+
+-- FIND ALL CUSTOMERS WHOSE TOTAL FILM RENTAL PAYMENTS EXCEED THE TOTAL PAYMENTS FOR ALL CUSTOMERS IN BOLIVIA, PARAGUAY, AND CHILE
+
+SELECT customer_id, sum(amount) total 
+FROM payment
+GROUP BY customer_id
+HAVING sum(amount) > ANY
+    (SELECT sum(p.amount)
+        FROM payment p 
+            JOIN customer c 
+            ON p.customer_id = c.customer_id 
+            JOIN address a 
+            ON c.address_id = a.address_id
+            JOIN city ct
+            ON a.city_id = ct.city_id 
+            JOIN country co 
+            ON ct.country_id = co.country_id
+        WHERE co.country IN ('BOLIVIA', 'PARAGUAY', 'CHILE')
+        GROUP BY co.country);
+
+-- MULTICOLUMN SUBQUERIES
+
+SELECT fa.actor_id, fa.film_id
+FROM film_actor fa 
+WHERE fa.actor_id IN 
+    (SELECT actor_id FROM actor WHERE last_name = 'MONROE')
+    AND fa.film_id IN 
+    (SELECT film_id FROM film WHERE rating = 'PG');
+
+SELECT actor_id, film_id
+FROM film_actor
+WHERE (actor_id, film_id) IN 
+    (SELECT a.actor_id, f.film_id
+        FROM actor a
+        CROSS JOIN film f
+        WHERE a.last_name = 'MONROE' AND f.rating = 'PG');
