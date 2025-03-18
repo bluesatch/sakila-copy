@@ -407,3 +407,122 @@ SELECT 'ACTR' typ, a.first_name, a.last_name
 FROM actor a 
 WHERE a.last_name LIKE 'L%'
 ORDER BY last, first;
+
+-- ---------- GROUPING AND AGGREGATES ------------------------
+
+-- FIND BEST CUSTOMERS
+
+-- HOW TO NOT DO IT!
+SELECT customer_id FROM RENTAL;
+
+-- USE GROUP BY
+SELECT customer_id 
+FROM rental 
+GROUP BY customer_id;
+
+-- USE AN AGGREGATE FUNCTION 
+SELECT customer_id, count(*)
+FROM rental 
+GROUP BY customer_id;
+
+-- TO SEE WHO ORDERED THE MOST
+SELECT customer_id, count(*)
+FROM rental 
+GROUP BY customer_id
+ORDER BY 2 DESC;
+
+-- CANNOT FILTER BEFORE GROUP
+SELECT customer_id, count(*) 
+FROM rental 
+WHERE count(*) >= 40
+GROUP BY customer_id;
+
+-- GROUP BY - HAVING
+SELECT customer_id, count(*)
+FROM rental 
+GROUP BY customer_id 
+HAVING count(*) >= 40;
+
+-- AGGREGATE FUNCTIONS
+-- PERFORM A SPECIFIC OPERATION OVER ALL ROWS IN A GROUP
+
+-- max() => returns the maximum value
+-- min() => returns the minimum value
+-- avg() => returns the average value across a set
+-- sum() => returns the sum of the values across a set
+-- count() => returns the number of values in a set
+
+-- RETURN THE DATA ON FILM RENTAL PAYMENTS
+
+SELECT MAX(amount) max_amt, MIN(amount) min_amt, AVG(amount) avg_amt, SUM(amount) sum_amt, COUNT(*) num_payments
+FROM payment;
+
+-- RETURN PAYMENT FOR EACH CUSTOMER
+SELECT customer_id,
+    MAX(amount) max_amt,
+    MIN(amount) min_amt,
+    AVG(amount) avg_amt,
+    SUM(amount) tot_amt,
+    COUNT(*) num_payments
+FROM payment GROUP BY customer_id
+ORDER BY tot_amt DESC;
+
+SELECT c.first_name, c.last_name, MAX(p.amount) max_amt,
+    MIN(p.amount) min_amt,
+    AVG(p.amount) avg_amt,
+    SUM(p.amount) tot_amt,
+    COUNT(*) num_payments
+FROM customer c 
+JOIN payment p USING (customer_id)
+GROUP BY p.customer_id
+ORDER BY tot_amt DESC;
+
+-- USE EXPRESSIONS
+-- FIND THE MAXIMUM NUMBER OF DAYS BETWEEN WHEN A FILM WAS RENTED AND RETURNED
+-- DATEDIFF() returns the difference in dates
+SELECT MAX(datediff(return_date, rental_date)) FROM rental;
+
+-- SINGLE COLUMN GROUPING
+-- FIND THE NUMBER OF FILMS ASSOCIATED WITH EACH ACTOR
+SELECT a.first_name, a.last_name, count(*)
+FROM actor a 
+JOIN film_actor fa USING (actor_id)
+GROUP BY fa.actor_id
+ORDER BY count(*) DESC;
+
+-- MULTICOLUMN GROUPING
+-- FIND THE TOTAL NUMBER OF FILMS FOR EACH FILM RATING FOR EACH ACTOR
+SELECT fa.actor_id, f.rating, count(*)
+FROM film_actor fa 
+JOIN film f USING (film_id)
+GROUP BY fa.actor_id, f.rating 
+ORDER BY 1, 2;
+
+-- GROUP FILTER CONDITIONS
+-- RETURN WHERE AN ACTOR HAS BEEN IN 10 OR MORE G OR PG FILMS
+SELECT fa.actor_id, f.rating, count(*)
+FROM film_actor fa 
+JOIN film f USING (film_id)
+WHERE f.rating IN ('G', 'PG')
+GROUP BY fa.actor_id, f.rating
+HAVING count(*) > 9;
+
+-- CHALLENGE #1
+-- CONSTRUCT A QUERY THAT COUNTS THE NUMBER OF ROWS IN THE PAYMENT TABLE 
+SELECT count(*) FROM payment;
+
+
+-- CHALLENGE #2
+-- MODFIY THE QUERY FROM CHALLENGE #1 TO COUNT THE NUMBER OF PAYMENTS MADE BY EACH CUSTOMER. SHOW THE CUSTOMER ID AND THE TOTAL AMOUNT PAID FOR EACH CUSTOMER
+SELECT customer_id, SUM(amount) tot_amt, count(*) payments
+FROM payment
+GROUP BY customer_id;
+
+
+-- CHALLENGE #3
+-- MODIFY THE QUERY FROM CHALLENGE #2 TO INCLUDE ONLY THOSE CUSTOMERS WHO HAVE MADE AT LEAST 40 PAYMENTS
+SELECT customer_id, SUM(amount) tot_amt, count(*) payments
+FROM payment
+GROUP BY customer_id
+HAVING count(*) >= 40
+ORDER BY payments DESC;
