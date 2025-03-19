@@ -637,3 +637,150 @@ WHERE (actor_id, film_id) IN
         FROM actor a
         CROSS JOIN film f
         WHERE a.last_name = 'MONROE' AND f.rating = 'PG');
+
+-- CORRELATED SUBQUERIES
+
+-- COUNT THE NUMBER OF FILM RENTALS FOR EACH CUSTOMER, AND THE CONTAINING QUERY RETRIVES THOSE CUSTOMERS WHO HAVE RENTED EXACTLY 20 FILMS
+
+SELECT c.first_name, c.last_name
+FROM customer c 
+WHERE 20 = 
+    (SELECT count(*) FROM rental r WHERE r.customer_id = c.customer_id);
+
+-- FIND ALL CUSTOMERS WHOSE TOTAL PAYMENTS FOR ALL FILM RENTALS ARE BETWEEN $180 AND $240
+
+SELECT c.first_name, c.last_name
+FROM customer c 
+WHERE 
+    (SELECT sum(p.amount) FROM payment p 
+        WHERE p.customer_id = c.customer_id)
+BETWEEN 180 AND 240;
+
+-- EXISTS OPERATOR
+-- WHEN YOU WANT TO IDENTIFY THAT A RELATIONSHIP EXISTS WITHOUT REGARD FOR THE QUANTITY
+
+-- FIND ALL CUSTOMERS WHO RENTED AT LEAST ONE FILM PRIOR TO MAY 25, 2005 WITHOUT REGARD FOR HOW MANY FILMS WERE RENTED
+
+SELECT c.first_name, c.last_name 
+FROM customer c 
+WHERE EXISTS 
+    (SELECT 1 FROM rental r 
+    WHERE r.customer_id = c.customer_id 
+        AND date(r.rental_date) < '2005-05-25');
+
+
+-- NOT EXISTS
+-- FIND ALL ACTORS WHO HAVE NEVER APPEARED IN AN R-RATED FILM
+SELECT a.first_name, a.last_name
+FROM actor a 
+WHERE NOT EXISTS 
+    (SELECT * FROM film_actor fa 
+        JOIN film f USING (film_id)
+    WHERE fa.actor_id = a.actor_id AND f.rating = 'R');
+
+-- GENERATE A REPORT SHOWING EACH CUSTOMER'S NAME, ALONG WITH THEIR CITY, TOTAL NUMBER OF RENTALS AND TOTAL PAYMENT
+
+SELECT c.first_name, c.last_name, ct.city, p.tot_payments, p.tot_rentals
+FROM 
+    (SELECT customer_id, count(*) tot_rentals, sum(amount) tot_payments
+    FROM payment 
+    GROUP BY customer_id) p
+JOIN customer c ON p.customer_id = c.customer_id
+JOIN address a ON c.address_id = a.address_id
+JOIN city ct ON a.city_id = ct.city_id; 
+
+-- CHALLENGE #1
+-- CONSTRUCT A QUERY AGAINST THE FILM TABLE THAT USES A FILTER CONDITION WITH A NONCORRELATED SUBQUERY AGAINST THE CATEGORY TABLE TO FIND ALL ACTION FILMS (CATEGORY.NAME = 'ACTION')
+SELECT title
+FROM film 
+WHERE film_id IN 
+    (SELECT fc.film_id FROM film_category fc 
+    JOIN category c USING (category_id) WHERE c.name = 'ACTION');
+
+-- CHALLENGE #2
+-- REWORK THE QUERY FROM CHALLENGE 1 USING A CORRELATED SUBQUERY AGAINST THE CATEGORY AND FILM_CATEGORY TABLES TO ACHIEVE THE SAME RESULTS
+SELECT f.title
+FROM film f
+WHERE EXISTS 
+(SELECT * FROM film_category fc 
+JOIN category c ON fc.category_id = c.category_id 
+WHERE c.name = 'ACTION' AND fc.film_id = f.film_id);
+
+SELECT f.title
+FROM film f 
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id 
+WHERE c.name = 'ACTION';
+
+-- ----------------JOINS ----------------------------------
+ -- OUTER JOIN => MAKES THE JOIN OPTIONAL
+
+ -- COUNT THE NUMBER OF AVAILABE COPIES OF EACH FILM 
+ SELECT f.film_id, f.title, count(*) num_copies
+ FROM film f 
+ INNER JOIN inventory i ON f.film_id = i.film_id
+ GROUP BY f.film_id, f.title;
+
+ -- LEFT OUTER JOIN
+ SELECT f.film_id, f.title, count(i.inventory_id) num_copies
+ FROM film f 
+ LEFT OUTER JOIN inventory i ON f.film_id = i.film_id
+ GROUP BY f.film_id, f.title;
+
+SELECT f.film_id, f.title, i.inventory_id
+FROM film f 
+INNER JOIN inventory i 
+ON f.film_id = i.film_id
+WHERE f.film_id BETWEEN 13 AND 15;
+
+SELECT f.film_id, f.title, i.inventory_id
+FROM film f 
+LEFT OUTER JOIN inventory i 
+ON f.film_id = i.film_id
+WHERE f.film_id BETWEEN 13 AND 15;
+
+
+-- RIGHT OUTER JOIN
+SELECT f.film_id, f.title, i.inventory_id
+FROM inventory i
+RIGHT OUTER JOIN film f
+ON f.film_id = i.film_id
+WHERE f.film_id BETWEEN 13 AND 15;
+
+-- THREE-WAY OUTER JOIN
+-- COUNT THE NUMBER OF AVAILABLE COPIES INCLUDE DATA FROM THE RENTAL TABLE (RENTAL_DATE)
+SELECT f.film_id, f.title, i.inventory_id, r.rental_date, c.first_name, c.last_name
+FROM film f 
+LEFT OUTER JOIN inventory i ON f.film_id = i.film_id
+LEFT OUTER JOIN rental r ON  i.inventory_id = r.inventory_id
+LEFT OUTER JOIN customer c ON r.customer_id = c.customer_id
+WHERE f.film_id BETWEEN 13 AND 15;
+
+-- CROSS JOINS
+-- INTEND TO GENERATE THE CARTESIAN PRODUCT OF TWO TABLES
+SELECT c.name category_name, l.name language_name 
+FROM category c 
+CROSS JOIN language l;
+
+-- CONDITIONAL LOGIC
+-- DISPLAY WHETHER A CUSTOMER'S ACCOUNT IS ACTIVE OR INACTIVE
+SELECT first_name, last_name,
+    CASE 
+        WHEN active = 1 THEN 'ACTIVE'
+        ELSE 'INACTIVE'
+    END activity_type
+FROM customer;
+
+SELECT f.title,
+    CASE 
+        WHEN c.name IN ('CHILDREN', 'FAMILY', 'SPORTS', 'ANIMATION')
+        THEN 'ALL AGES'
+        WHEN c.name = 'HORROR'
+        THEN 'ADULT'
+        WHEN c.name IN ('MUSIC', 'GAMES')
+        THEN 'TEENS'
+        ELSE 'OTHER'
+    END appr_for
+FROM film f 
+JOIN film_category fa ON f.film_id = fa.film_id
+JOIN category c ON fa.category_id = c.category_id;
